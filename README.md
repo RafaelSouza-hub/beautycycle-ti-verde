@@ -9,7 +9,7 @@ Projeto de extensão **TI Verde** (Trilha C: EcoTI Monitor), desenvolvido na **U
 
 - Aplicação online: _(adicionar link do deploy)_
 - Documento de Visão de Escopo: _(adicionar link)_
-- Diagrama do banco (DER): _(adicionar imagem ou link)_
+- Diagrama do banco (DER): [Ver DER](docs/DER_Projeto_TI_Verde_Salao_Lucia.png)
 
 ## 📌 Sobre o projeto
 
@@ -49,6 +49,8 @@ Banco relacional com 4 tabelas e integridade referencial:
 salao (1) ──< auditorias (N) ──< consumos (N)
                     └─────────< desperdicios (N)
 ```
+
+![DER do BeautyCycle](docs/DER_Projeto_TI_Verde_Salao_Lucia.png)
 
 | Tabela | Descrição |
 |---|---|
