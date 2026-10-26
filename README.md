@@ -7,7 +7,7 @@ Projeto de extensão **TI Verde** (Trilha C: EcoTI Monitor), desenvolvido na **U
 
 ## 🔗 Links
 
-- Aplicação online: _(adicionar link do deploy)_
+- Aplicação online: [Acessar Projeto](https://beautycycle.lovable.app/)
 - Documento de Visão de Escopo: _(adicionar link)_
 - Diagrama do banco (DER): [Ver DER](docs/DER_Projeto_TI_Verde_Salao_Lucia.png)
 
