@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,8 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { senha?: "alterada" } =>
+    s["senha"] === "alterada" ? { senha: "alterada" } : {},
   component: Login,
 });
 
@@ -31,10 +33,17 @@ const schema = z.object({
 
 function Login() {
   const navigate = useNavigate();
+  const { senha: senhaAlterada } = Route.useSearch();
   const [erro, setErro] = useState<string | null>(null);
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { email: "", senha: "" } });
 
   useEffect(() => {
+    // Link de recuperação caiu na tela de login: leva para redefinir a senha, nunca ao painel.
+    const url = window.location.hash + window.location.search;
+    if (/type=recovery/.test(url)) {
+      window.location.replace(`/reset-password${window.location.search}${window.location.hash}`);
+      return;
+    }
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/inicio", replace: true });
     });
@@ -63,6 +72,9 @@ function Login() {
         </div>
         <form onSubmit={submit} className="card-soft space-y-4 p-6">
           <h1 className="text-xl font-semibold">Entrar</h1>
+          {senhaAlterada && (
+            <p className="rounded-lg bg-secondary p-3 text-sm">Senha alterada com sucesso. Entre com a nova senha.</p>
+          )}
           <div className="space-y-1">
             <Label htmlFor="email">E-mail</Label>
             <Input id="email" type="email" autoComplete="email" className="h-11" {...form.register("email")} />
@@ -72,6 +84,9 @@ function Login() {
             <Label htmlFor="senha">Senha</Label>
             <Input id="senha" type="password" autoComplete="current-password" className="h-11" {...form.register("senha")} />
             <CampoErro msg={form.formState.errors.senha?.message} />
+            <Link to="/esqueci-senha" className="inline-block pt-1 text-sm font-medium text-primary hover:underline">
+              Esqueci minha senha
+            </Link>
           </div>
           {erro && <p className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{erro}</p>}
           <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>

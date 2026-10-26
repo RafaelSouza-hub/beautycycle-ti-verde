@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ClipboardList, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { ClipboardList, FileDown, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Confirmar, EstadoVazio, ErroCarregar, PeriodoFiltro } from "@/components/common";
 import { AuditoriaForm } from "@/components/AuditoriaForm";
+import { ExportarPdfDialog } from "@/components/ExportarPdfDialog";
 import { totaisAuditoria, useAuditorias, useSetAtivo } from "@/hooks/useAuditorias";
 import { formatBRL, formatMes, mesAtual, somarMeses } from "@/lib/format";
 import { toastErro, traduzirErro } from "@/lib/errors";
@@ -32,6 +33,7 @@ function Auditorias() {
   const [inicio, setInicio] = useState(somarMeses(mesAtual(), -11));
   const [inativas, setInativas] = useState(false);
   const [form, setForm] = useState<{ open: boolean; a?: Auditoria | null }>({ open: false });
+  const [exportar, setExportar] = useState(false);
   const [excluir, setExcluir] = useState<Auditoria | null>(null);
   const q = useAuditorias({ inicio, fim, incluirInativas: inativas });
   const setAtivo = useSetAtivo();
@@ -50,9 +52,14 @@ function Auditorias() {
       <h1 className="text-2xl font-bold">Auditorias</h1>
       <div className="card-soft space-y-4 p-4">
         <PeriodoFiltro inicio={inicio} fim={fim} onChange={(i, f) => { setInicio(i); setFim(f); }} />
-        <div className="flex min-h-11 items-center gap-3">
-          <Switch id="inativas" checked={inativas} onCheckedChange={setInativas} />
-          <Label htmlFor="inativas">Mostrar inativas</Label>
+        <div className="flex min-h-11 flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Switch id="inativas" checked={inativas} onCheckedChange={setInativas} />
+            <Label htmlFor="inativas">Mostrar inativas</Label>
+          </div>
+          <Button variant="outline" className="h-11" onClick={() => setExportar(true)}>
+            <FileDown /> Exportar PDF
+          </Button>
         </div>
       </div>
 
@@ -116,6 +123,7 @@ function Auditorias() {
         onOpenChange={(o) => setForm((f) => ({ ...f, open: o }))}
         onCreated={(id) => navigate({ to: "/auditorias/$id", params: { id } })}
       />
+      <ExportarPdfDialog open={exportar} onOpenChange={setExportar} inicio={inicio} fim={fim} />
       <Confirmar
         open={!!excluir}
         onOpenChange={(o) => !o && setExcluir(null)}

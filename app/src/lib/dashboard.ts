@@ -8,10 +8,15 @@ export interface MesAgg {
   produtos: number;
   total: number;
   desperdicio: number;
+  /** RN05: desperdício ÷ gasto com produtos × 100; null quando produtos = 0 */
+  pctProdutos: number | null;
 }
 
-export function agregar(auditorias: AuditoriaCompleta[]) {
-  const ativas = auditorias.filter((a) => a.ativo);
+export function agregar(
+  auditorias: AuditoriaCompleta[],
+  { incluirInativas = false }: { incluirInativas?: boolean } = {},
+) {
+  const ativas = incluirInativas ? auditorias : auditorias.filter((a) => a.ativo);
   const porMes = new Map<string, MesAgg>();
   const porMotivo: Record<Motivo, number> = { sobra: 0, validade: 0, erro_mistura: 0, outro: 0 };
   const porProduto = new Map<string, number>();
@@ -19,7 +24,8 @@ export function agregar(auditorias: AuditoriaCompleta[]) {
 
   for (const a of ativas) {
     const mes = dataParaMes(a.mes_referencia);
-    const m = porMes.get(mes) ?? { mes, agua: 0, energia: 0, produtos: 0, total: 0, desperdicio: 0 };
+    const m =
+      porMes.get(mes) ?? { mes, agua: 0, energia: 0, produtos: 0, total: 0, desperdicio: 0, pctProdutos: null };
     for (const c of a.consumos) {
       const v = Number(c.valor_reais) || 0;
       m[c.tipo] += v;
@@ -38,8 +44,12 @@ export function agregar(auditorias: AuditoriaCompleta[]) {
   }
 
   const meses = [...porMes.values()].sort((a, b) => a.mes.localeCompare(b.mes));
+  for (const m of meses) m.pctProdutos = m.produtos > 0 ? (m.desperdicio / m.produtos) * 100 : null;
   const gastoTotal = meses.reduce((s, m) => s + m.total, 0);
   const desperdicioTotal = meses.reduce((s, m) => s + m.desperdicio, 0);
+  const produtosTotal = meses.reduce((s, m) => s + m.produtos, 0);
+  // RN05: desperdício do período ÷ gasto com produtos do período × 100
+  const pctDesperdicioProdutos = produtosTotal > 0 ? (desperdicioTotal / produtosTotal) * 100 : null;
 
   const recente = meses.at(-1) ?? null;
   const anterior = recente ? (porMes.get(somarMeses(recente.mes, -1)) ?? null) : null;
@@ -55,5 +65,5 @@ export function agregar(auditorias: AuditoriaCompleta[]) {
     .sort((a, b) => b.valor - a.valor)
     .slice(0, 5);
 
-  return { meses, gastoTotal, desperdicioTotal, recente, anterior, variacao, motivos, topProdutos };
+  return { meses, gastoTotal, desperdicioTotal, produtosTotal, pctDesperdicioProdutos, recente, anterior, variacao, motivos, topProdutos };
 }

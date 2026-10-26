@@ -30,6 +30,7 @@ export interface Consumo {
   valor_reais: number;
   quantidade: number;
   unidade: UnidadeConsumo;
+  produto: string | null;
 }
 
 export interface Desperdicio {

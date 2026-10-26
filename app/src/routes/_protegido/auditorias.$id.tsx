@@ -4,7 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowLeft, Droplets, Package, Pencil, Plus, Trash2, Zap } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Droplets, FileDown, Package, Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,10 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { CampoErro, Confirmar, EstadoVazio, ErroCarregar } from "@/components/common";
 import { AuditoriaForm } from "@/components/AuditoriaForm";
+import { ExportarPdfDialog } from "@/components/ExportarPdfDialog";
 import { totaisAuditoria, useAuditoria } from "@/hooks/useAuditorias";
 import { useRemoverConsumo, useSalvarConsumo } from "@/hooks/useConsumos";
 import { useRemoverDesperdicio, useSalvarDesperdicio } from "@/hooks/useDesperdicios";
-import { decimalField, formatBRL, formatMes, formatNum, numToInput, parseDecimal } from "@/lib/format";
+import { dataParaMes, decimalField, formatBRL, formatMes, formatNum, numToInput, parseDecimal } from "@/lib/format";
 import { toastErro, traduzirErro } from "@/lib/errors";
 import {
   CONSUMO_INFO, MOTIVO_LABEL, type Consumo, type Desperdicio, type Motivo, type TipoConsumo,
@@ -45,6 +46,7 @@ function Detalhe() {
   const { id } = Route.useParams();
   const q = useAuditoria(id);
   const [editar, setEditar] = useState(false);
+  const [exportar, setExportar] = useState(false);
   const [consumoForm, setConsumoForm] = useState<{ tipo: TipoConsumo; c?: Consumo } | null>(null);
   const [despForm, setDespForm] = useState<{ d?: Desperdicio } | null>(null);
   const [remConsumo, setRemConsumo] = useState<Consumo | null>(null);
@@ -83,11 +85,16 @@ function Detalhe() {
         <Link to="/auditorias"><ArrowLeft /> Auditorias</Link>
       </Button>
       <section className="card-soft space-y-3 p-5">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-2xl font-bold">{formatMes(a.mes_referencia)}</h1>
-          {!leitura && (
-            <Button variant="outline" size="sm" onClick={() => setEditar(true)}><Pencil /> Editar</Button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setExportar(true)}>
+              <FileDown /> Exportar PDF desta auditoria
+            </Button>
+            {!leitura && (
+              <Button variant="outline" size="sm" onClick={() => setEditar(true)}><Pencil /> Editar</Button>
+            )}
+          </div>
         </div>
         {a.observacoes && <p className="whitespace-pre-line text-sm text-muted-foreground">{a.observacoes}</p>}
         <div className="grid grid-cols-2 gap-3">
@@ -109,8 +116,8 @@ function Detalhe() {
           <TabsTrigger value="desperdicios" className="h-10 rounded-lg">Desperdícios</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="consumos" className="mt-4 grid gap-3 md:grid-cols-3">
-          {(Object.keys(CONSUMO_INFO) as TipoConsumo[]).map((tipo) => {
+        <TabsContent value="consumos" className="mt-4 grid gap-3 md:grid-cols-2">
+          {(["agua", "energia"] as TipoConsumo[]).map((tipo) => {
             const info = CONSUMO_INFO[tipo];
             const c = a.consumos.find((x) => x.tipo === tipo);
             return (
@@ -140,6 +147,56 @@ function Detalhe() {
               </div>
             );
           })}
+          {(() => {
+            const info = CONSUMO_INFO.produtos;
+            const entradas = a.consumos.filter((x) => x.tipo === "produtos");
+            const totalValor = entradas.reduce((s, x) => s + Number(x.valor_reais), 0);
+            const totalQtd = entradas.reduce((s, x) => s + Number(x.quantidade), 0);
+            return (
+              <div className="card-soft p-4 md:col-span-2">
+                <div className="flex items-center gap-2 font-semibold [&_svg]:h-5 [&_svg]:w-5 [&_svg]:text-primary">
+                  {ICONES.produtos} {info.label}
+                </div>
+                {entradas.length === 0 ? (
+                  <>
+                    <p className="mt-2 text-sm text-muted-foreground">Ainda não registrado.</p>
+                    {!leitura && (
+                      <Button className="mt-3 w-full sm:w-auto" onClick={() => setConsumoForm({ tipo: "produtos" })}><Plus /> Registrar</Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div className="rounded-xl bg-secondary p-3"><p className="text-xs text-muted-foreground">Total em Reais</p><p className="text-lg font-bold">{formatBRL(totalValor)}</p></div>
+                      <div className="rounded-xl bg-muted p-3"><p className="text-xs text-muted-foreground">Total de Quantidades</p><p className="text-lg font-bold">{formatNum(totalQtd)} {info.unidadeLabel}</p></div>
+                    </div>
+                    <ul className="mt-3 space-y-2">
+                      {entradas.map((c) => (
+                        <li key={c.id} className="rounded-xl bg-muted p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-semibold">{c.produto?.trim() || "Produto sem nome"}</p>
+                              <p className="text-sm text-muted-foreground">{formatNum(c.quantidade)} {info.unidadeLabel}</p>
+                            </div>
+                            <p className="text-lg font-bold">{formatBRL(c.valor_reais)}</p>
+                          </div>
+                          {!leitura && (
+                            <div className="mt-2 flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setConsumoForm({ tipo: "produtos", c })}><Pencil /> Editar</Button>
+                              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setRemConsumo(c)}><Trash2 /> Remover</Button>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {!leitura && (
+                      <Button className="mt-3 w-full sm:w-auto" onClick={() => setConsumoForm({ tipo: "produtos" })}><Plus /> Adicionar compra de produtos</Button>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="desperdicios" className="mt-4 space-y-3">
@@ -174,6 +231,13 @@ function Detalhe() {
       </Tabs>
 
       <AuditoriaForm open={editar} onOpenChange={setEditar} auditoria={a} />
+      <ExportarPdfDialog
+        open={exportar}
+        onOpenChange={setExportar}
+        inicio={dataParaMes(a.mes_referencia)}
+        fim={dataParaMes(a.mes_referencia)}
+        auditoria={a}
+      />
       <ConsumoDialog auditoriaId={a.id} state={consumoForm} existentes={a.consumos} onClose={() => setConsumoForm(null)} />
       <DesperdicioDialog auditoriaId={a.id} state={despForm} onClose={() => setDespForm(null)} />
       <Confirmar
@@ -196,7 +260,11 @@ function Detalhe() {
   );
 }
 
-const consumoSchema = z.object({ valor: decimalField, quantidade: decimalField });
+const consumoSchema = z.object({
+  produto: z.string().trim().max(120, "Máximo de 120 caracteres"),
+  valor: decimalField,
+  quantidade: decimalField,
+});
 
 function ConsumoDialog({
   auditoriaId, state, existentes, onClose,
@@ -207,15 +275,20 @@ function ConsumoDialog({
   onClose: () => void;
 }) {
   const salvar = useSalvarConsumo();
-  const form = useForm<z.infer<typeof consumoSchema>>({ resolver: zodResolver(consumoSchema), defaultValues: { valor: "", quantidade: "" } });
+  const form = useForm<z.infer<typeof consumoSchema>>({ resolver: zodResolver(consumoSchema), defaultValues: { produto: "", valor: "", quantidade: "" } });
   useEffect(() => {
-    if (state) form.reset({ valor: state.c ? numToInput(state.c.valor_reais) : "", quantidade: state.c ? numToInput(state.c.quantidade) : "" });
+    if (state) form.reset({ produto: state.c?.produto ?? "", valor: state.c ? numToInput(state.c.valor_reais) : "", quantidade: state.c ? numToInput(state.c.quantidade) : "" });
   }, [state, form]);
   if (!state) return null;
   const info = CONSUMO_INFO[state.tipo];
+  const ehProdutos = state.tipo === "produtos";
 
   const submit = form.handleSubmit(async (v) => {
-    if (!state.c && existentes.some((x) => x.tipo === state.tipo)) {
+    if (ehProdutos && !v.produto) {
+      form.setError("produto", { message: "Informe o nome do produto" });
+      return;
+    }
+    if (!ehProdutos && !state.c && existentes.some((x) => x.tipo === state.tipo)) {
       toast.error(`Já existe um consumo de ${info.label} nesta auditoria.`);
       return;
     }
@@ -223,6 +296,7 @@ function ConsumoDialog({
       await salvar.mutateAsync({
         id: state.c?.id, auditoria_id: auditoriaId, tipo: state.tipo,
         valor_reais: parseDecimal(v.valor), quantidade: parseDecimal(v.quantidade),
+        produto: ehProdutos ? v.produto.trim() : null,
       });
       toast.success("Consumo salvo.");
       onClose();
@@ -236,6 +310,13 @@ function ConsumoDialog({
       <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader><DialogTitle>{info.label}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          {ehProdutos && (
+            <div className="space-y-1">
+              <Label htmlFor="produto-consumo">Nome do produto</Label>
+              <Input id="produto-consumo" maxLength={120} placeholder="Ex.: Shampoo neutro" className="h-11" {...form.register("produto")} />
+              <CampoErro msg={form.formState.errors.produto?.message} />
+            </div>
+          )}
           <div className="space-y-1">
             <Label htmlFor="valor">Valor (R$)</Label>
             <Input id="valor" inputMode="decimal" placeholder="0,00" className="h-11" {...form.register("valor")} />

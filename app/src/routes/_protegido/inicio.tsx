@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, ClipboardPlus, Droplets, Trash2, Wallet } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ClipboardPlus, Droplets, FileDown, Percent, Trash2, Wallet } from "lucide-react";
 import {
   Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
@@ -8,9 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EstadoVazio, ErroCarregar, PeriodoFiltro } from "@/components/common";
 import { AuditoriaForm } from "@/components/AuditoriaForm";
+import { ExportarPdfDialog } from "@/components/ExportarPdfDialog";
 import { useAuditorias } from "@/hooks/useAuditorias";
 import { agregar } from "@/lib/dashboard";
-import { formatBRL, formatMes, formatMesCurto, mesAtual, somarMeses } from "@/lib/format";
+import { formatBRL, formatMes, formatMesCurto, formatPct, mesAtual, periodoAtalho, somarMeses } from "@/lib/format";
+
+const ATALHOS = [3, 6, 12] as const;
 import { traduzirErro } from "@/lib/errors";
 
 export const Route = createFileRoute("/_protegido/inicio")({
@@ -28,10 +31,33 @@ export const Route = createFileRoute("/_protegido/inicio")({
 const tooltipBRL = (v: number) => formatBRL(v);
 const eixoBRL = (v: number) => `R$ ${Math.round(v)}`;
 
+/** Tooltip do gráfico "Desperdício por mês": valor em R$ + percentual sobre o gasto com produtos (RN05) */
+function TooltipDesperdicio({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { payload?: { desperdicio?: number; pctProdutos?: number | null } }[];
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const m = payload[0]?.payload;
+  if (!m) return null;
+  return (
+    <div className="rounded-lg border bg-background px-3 py-2 text-sm shadow-md">
+      <p className="font-medium">{label}</p>
+      <p>Desperdício: {formatBRL(Number(m.desperdicio ?? 0))}</p>
+      <p className="text-muted-foreground">Sobre gasto com produtos: {formatPct(m.pctProdutos ?? null)}</p>
+    </div>
+  );
+}
+
 function Inicio() {
   const [fim, setFim] = useState(mesAtual());
   const [inicio, setInicio] = useState(somarMeses(mesAtual(), -5));
   const [novo, setNovo] = useState(false);
+  const [exportar, setExportar] = useState(false);
   const q = useAuditorias({ inicio, fim });
   const agg = useMemo(() => agregar(q.data ?? []), [q.data]);
   const meses = agg.meses.map((m) => ({ ...m, rotulo: formatMesCurto(m.mes) }));
@@ -39,8 +65,31 @@ function Inicio() {
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-bold">Início</h1>
-      <div className="card-soft p-4">
+      <div className="card-soft space-y-3 p-4">
+        <div className="grid grid-cols-3 gap-2 md:w-96">
+          {ATALHOS.map((n) => {
+            const p = periodoAtalho(mesAtual(), n);
+            const ativo = p.inicio === inicio && p.fim === fim;
+            return (
+              <Button
+                key={n}
+                type="button"
+                variant={ativo ? "default" : "outline"}
+                aria-pressed={ativo}
+                className={`h-11 ${ativo ? "" : "border-primary text-primary"}`}
+                onClick={() => { setInicio(p.inicio); setFim(p.fim); }}
+              >
+                {n} meses
+              </Button>
+            );
+          })}
+        </div>
         <PeriodoFiltro inicio={inicio} fim={fim} onChange={(i, f) => { setInicio(i); setFim(f); }} />
+        <div className="flex justify-end">
+          <Button variant="outline" className="h-11" onClick={() => setExportar(true)}>
+            <FileDown /> Exportar PDF
+          </Button>
+        </div>
       </div>
 
       {q.isLoading ? (
@@ -59,7 +108,7 @@ function Inicio() {
         />
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Resumo icon={<Wallet />} titulo="Gasto total no período" valor={formatBRL(agg.gastoTotal)} />
             <div className="card-soft p-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -76,6 +125,11 @@ function Inicio() {
               )}
             </div>
             <Resumo icon={<Trash2 />} titulo="Desperdício no período" valor={formatBRL(agg.desperdicioTotal)} />
+            <Resumo
+              icon={<Percent />}
+              titulo="Desperdício sobre gasto com produtos"
+              valor={formatPct(agg.pctDesperdicioProdutos)}
+            />
           </div>
 
           <Grafico titulo="Gasto por mês">
@@ -97,7 +151,7 @@ function Inicio() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="rotulo" fontSize={12} />
                 <YAxis tickFormatter={eixoBRL} fontSize={12} width={60} />
-                <Tooltip formatter={tooltipBRL} />
+                <Tooltip content={<TooltipDesperdicio />} />
                 <Legend />
                 <Line dataKey="desperdicio" name="Desperdício" stroke="var(--chart-4)" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
@@ -138,6 +192,7 @@ function Inicio() {
         </>
       )}
       <AuditoriaForm open={novo} onOpenChange={setNovo} />
+      <ExportarPdfDialog open={exportar} onOpenChange={setExportar} inicio={inicio} fim={fim} />
     </div>
   );
 }

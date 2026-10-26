@@ -6,6 +6,10 @@ const num = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 });
 export const formatBRL = (v: number) => brl.format(Number(v) || 0);
 export const formatNum = (v: number) => num.format(Number(v) || 0);
 
+const pct = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+/** Percentual em pt-BR; null vira "—" (divisão por zero) */
+export const formatPct = (v: number | null) => (v === null ? "—" : `${pct.format(v)}%`);
+
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
@@ -34,6 +38,9 @@ export function somarMeses(ym: string, delta: number) {
   const nm = (total % 12) + 1;
   return `${ny}-${String(nm).padStart(2, "0")}`;
 }
+
+/** Atalho de N meses terminando em `atual` (AAAA-MM) */
+export const periodoAtalho = (atual: string, n: number) => ({ inicio: somarMeses(atual, -(n - 1)), fim: atual });
 
 export function mesAtual() {
   const d = new Date();

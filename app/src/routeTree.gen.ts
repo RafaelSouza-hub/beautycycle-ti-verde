@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtegidoRouteRouteImport } from './routes/_protegido/route'
+import { Route as EsqueciSenhaRouteImport } from './routes/esqueci-senha'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProtegidoInicioRouteImport } from './routes/_protegido/inicio'
 import { Route as ProtegidoPerfilRouteImport } from './routes/_protegido/perfil'
 import { Route as ProtegidoAuditoriasIndexRouteImport } from './routes/_protegido/auditorias.index'
@@ -23,6 +25,16 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const ProtegidoRouteRoute = ProtegidoRouteRouteImport.update({
   id: '/_protegido',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EsqueciSenhaRoute = EsqueciSenhaRouteImport.update({
+  id: '/esqueci-senha',
+  path: '/esqueci-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProtegidoInicioRoute = ProtegidoInicioRouteImport.update({
@@ -49,6 +61,8 @@ const ProtegidoAuditoriasIdRoute = ProtegidoAuditoriasIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/esqueci-senha': typeof EsqueciSenhaRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/inicio': typeof ProtegidoInicioRoute
   '/perfil': typeof ProtegidoPerfilRoute
   '/auditorias/$id': typeof ProtegidoAuditoriasIdRoute
@@ -56,6 +70,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/esqueci-senha': typeof EsqueciSenhaRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/inicio': typeof ProtegidoInicioRoute
   '/perfil': typeof ProtegidoPerfilRoute
   '/auditorias/$id': typeof ProtegidoAuditoriasIdRoute
@@ -65,6 +81,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_protegido': typeof ProtegidoRouteRouteWithChildren
+  '/esqueci-senha': typeof EsqueciSenhaRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_protegido/inicio': typeof ProtegidoInicioRoute
   '/_protegido/perfil': typeof ProtegidoPerfilRoute
   '/_protegido/auditorias/$id': typeof ProtegidoAuditoriasIdRoute
@@ -72,13 +90,29 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/inicio' | '/perfil' | '/auditorias/$id' | '/auditorias/'
+  fullPaths:
+    | '/'
+    | '/esqueci-senha'
+    | '/reset-password'
+    | '/inicio'
+    | '/perfil'
+    | '/auditorias/$id'
+    | '/auditorias/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/inicio' | '/perfil' | '/auditorias/$id' | '/auditorias'
+  to:
+    | '/'
+    | '/esqueci-senha'
+    | '/reset-password'
+    | '/inicio'
+    | '/perfil'
+    | '/auditorias/$id'
+    | '/auditorias'
   id:
     | '__root__'
     | '/'
     | '/_protegido'
+    | '/esqueci-senha'
+    | '/reset-password'
     | '/_protegido/inicio'
     | '/_protegido/perfil'
     | '/_protegido/auditorias/$id'
@@ -88,6 +122,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtegidoRouteRoute: typeof ProtegidoRouteRouteWithChildren
+  EsqueciSenhaRoute: typeof EsqueciSenhaRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -104,6 +140,20 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof ProtegidoRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/esqueci-senha': {
+      id: '/esqueci-senha'
+      path: '/esqueci-senha'
+      fullPath: '/esqueci-senha'
+      preLoaderRoute: typeof EsqueciSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_protegido/inicio': {
@@ -158,6 +208,8 @@ const ProtegidoRouteRouteWithChildren = ProtegidoRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtegidoRouteRoute: ProtegidoRouteRouteWithChildren,
+  EsqueciSenhaRoute: EsqueciSenhaRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -19,6 +19,7 @@ export function useSalvarConsumo() {
       tipo: TipoConsumo;
       valor_reais: number;
       quantidade: number;
+      produto?: string | null;
     }) => {
       const payload = {
         auditoria_id: v.auditoria_id,
@@ -26,6 +27,7 @@ export function useSalvarConsumo() {
         unidade: CONSUMO_INFO[v.tipo].unidade,
         valor_reais: v.valor_reais,
         quantidade: v.quantidade,
+        produto: v.tipo === "produtos" ? (v.produto ?? null) : null,
       };
       const { error } = v.id
         ? await supabase.from("consumos").update(payload).eq("id", v.id)
