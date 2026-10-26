@@ -77,7 +77,6 @@ cp .env.example .env
 npm run dev
 ```
 
-> As chaves do Supabase **não** devem ser enviadas ao GitHub. Use sempre o arquivo `.env`.
 
 ## 👥 Equipe
 
