@@ -42,6 +42,7 @@ create table public.consumos (
   valor_reais   numeric(10,2) not null,
   quantidade    numeric(10,2) not null,
   unidade       varchar(15) not null,
+  produto       varchar(120),
   constraint consumos_tipo_ck    check (tipo in ('agua', 'energia', 'produtos')),
   constraint consumos_unidade_ck check (unidade in ('m3', 'kWh', 'unidades')),
   constraint consumos_valor_ck   check (valor_reais >= 0),
@@ -130,9 +131,9 @@ create policy "desperdicios_somente_dono"
 -- insert into public.salao (user_id, nome, responsavel, bairro, cidade, telefone)
 -- values (
 --   'ID-DO-USUARIO',
---   'Salão de Beleza Lucia',
+--   'Salão de Beleza',
 --   'NOME-DA-RESPONSÁVEL',
---   'Nova Cidade',
---   'Nilópolis',
+--   'Nome-do-bairro',
+--   'Nome-do-município',
 --   ''
 -- );
