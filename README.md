@@ -8,7 +8,6 @@ Projeto de extensão **TI Verde** (Trilha C: EcoTI Monitor), desenvolvido na **U
 ## 🔗 Links
 
 - Aplicação online: [Acessar Projeto](https://beautycycle.lovable.app/)
-- Documento de Visão de Escopo: _(adicionar link)_
 - Diagrama do banco (DER): [Ver DER](docs/DER_Projeto_TI_Verde_Salao_Lucia.png)
 
 ## 📌 Sobre o projeto
@@ -25,12 +24,13 @@ O sistema foi pensado para uso principalmente em **celular** (mobile first), por
 
 ## ✅ Funcionalidades
 
-- Login com e-mail e senha
+- Login com e-mail e senha, e recuperação de senha por e-mail
 - CRUD de auditorias mensais (criar, listar, editar, excluir/inativar)
 - Registro de consumos (água, energia, produtos) por auditoria
 - Registro de desperdícios (produto, quantidade, valor, motivo)
-- Dashboard com gráficos de gastos e desperdício por mês
+- Dashboard com gráficos de gastos e desperdício por mês, com atalhos de período de 3, 6 e 12 meses.
 - Filtro de auditorias por período
+- Exportação de relatório em PDF do período filtrado
 
 ## 🛠️ Tecnologias
 
@@ -39,7 +39,7 @@ O sistema foi pensado para uso principalmente em **celular** (mobile first), por
 | Front-end | React + Tailwind CSS (gerado com Lovable) |
 | Back-end / Banco | Supabase (PostgreSQL, Auth, API REST) |
 | Versionamento | Git e GitHub |
-| Deploy | _(Lovable / Vercel / Netlify)_ |
+| Deploy | Lovable |
 
 ## 🗄️ Modelo de dados
 
